@@ -25,9 +25,9 @@ vector<int> symble{-1};
 vector<int> input = {3, multi, lp, 5, add, 4, divide, 2, rp, $}; //input 3*(5+4/2)
 
 template <typename T> // must before the func
-void test_out(T a)
+void println(T a)
 {
-	// simple test_out function
+	// simple println function
 	cout << a << endl;
 }
 
@@ -39,28 +39,33 @@ vector<row> table;
 
 int main(int argc, char* argv[])
 {
-	init();
+	// init();
 	// analysis();
-	test_out(generative[0][0]);
+	// println(generative[0][0]);
 	system("pause");
 	return 0;
+	// string s = "R15";
+	// s.erase(s.begin());
+	// auto i = stoi(s, nullptr, 0);
+	// println(i+!);
+
 	// char a = '5';
-	// test_out(a - '0');
+	// println(a - '0');
 	// int a = 1;
 	// vector<int>t;
 	// t.push_back(a);
 	// a++;
 	// t.push_back(a);
 	// t.erase(t.begin());
-	// test_out(t.front());
+	// println(t.front());
 	// string ss = "asd";
-	// test_out(ss[0] == 'a');
-	// test_out(table[1][$]);
+	// println(ss[0] == 'a');
+	// println(table[1][$]);
 	// table[0][lp] = "S6"; // insert cannot update map
 	// cout << static_cast<int>('+') << endl; 
 	// col.insert(cell(lp, "S4"));
 	// col.insert(cell(num, "S5"));
-	// test_out(col[lp][0]); // S
+	// println(col[lp][0]); // S
 }
 
 void add_reduce_via_follow(initializer_list<Vt> v, string action, row& col)
@@ -77,28 +82,28 @@ void init()
 	state.push(0);
 	// init the generative
 	expression e{"S", "E"};
-	generative.push_back(e);//1
+	generative.push_back(e); //1
 	e[0] = "E", e[1] = "E+T";
-	generative.push_back(e);//2
+	generative.push_back(e); //2
 	e[0] = "E", e[1] = "E-T";
-	generative.push_back(e);//3
+	generative.push_back(e); //3
 	e[0] = "E", e[1] = "T";
-	generative.push_back(e);//4
+	generative.push_back(e); //4
 	e[0] = "T", e[1] = "T*F";
-	generative.push_back(e);//5
+	generative.push_back(e); //5
 	e[1] = "T/F";
-	generative.push_back(e);//6
+	generative.push_back(e); //6
 	e[1] = "F";
-	generative.push_back(e);//7
+	generative.push_back(e); //7
 	e[0] = "F", e[1] = "(E)";
-	generative.push_back(e);//8
+	generative.push_back(e); //8
 	e[1] = "num";
-	generative.push_back(e);//9
+	generative.push_back(e); //9
 
 	// init the table
-	row col{cell(lp, "S4"), cell(num, "S5")}; // row 0
+	row col{cell(lp, "S4"), cell(num, "S5"), cell(E, "1"), cell(T, "2"), cell(F, "3")}; // row 0
 	table.push_back(col);
-	col[add] = "S6", col[sub] = "S7", col[$] = "R1";
+	col[add] = "S6", col[sub] = "S7", col[$] = "ACC";
 	table.push_back(col); // row1
 	col[multi] = "S8", col[divide] = "S9";
 	// for (auto element : FOLLOW_E)
@@ -113,17 +118,18 @@ void init()
 	// }
 	add_reduce_via_follow(FOLLOW_T, "R7", col);
 	table.push_back(col); //row 3
-	col[lp] = "S4";
+	col[lp] = "S4", col[E] = "10", col[T] = "2", col[F] = "3";
 	table.push_back(col); // row4
 	add_reduce_via_follow(FOLLOW_F, "R9", col);
 	table.push_back(col); // row5
-	col[lp] = "S4", col[num] = "S5";
+	col[lp] = "S4", col[num] = "S5", col[T] = "11", col[F] = "13";
 	table.push_back(col); // r6
-	col[lp] = "S4"; //r7
+	col[lp] = "S4", col[E] = "4", col[T] = "12", col[F] = "13"; //r7
 	table.push_back(col);
-	col[lp] = "S4", col[num] = "S5"; // r8
+	col[lp] = "S4", col[num] = "S5", col[F] = "13"; // r8
 	table.push_back(col);
-	table.push_back(col); // r9 == r8 push twice
+	col[F] = "14";
+	table.push_back(col); // r9 
 	col[add] = "S6", col[sub] = "S7", col[rp] = "S15";
 	table.push_back(col); //r10
 	col[multi] = "S8", col[divide] = "S9";
@@ -143,16 +149,36 @@ void analysis()
 	auto index_input = 0;
 	while (true)
 	{
-		auto s = state.top();
-		if (table[s][input[index_input]][0] == 'S')
+		// auto s = state.top();
+		if (table[state.top()][input[index_input]][0] == 'S')
 		{
-			auto new_state_top = table[s][input[index_input]][1] - int('0');
+			auto shift_action = table[state.top()][input[index_input]];
+			shift_action.erase(shift_action.begin());
+			auto new_state_top = stoi(shift_action, nullptr, 0);
+			// auto new_state_top = table[state.top()][input[index_input]][1] - int('0');
 			state.push(new_state_top);
 			symble.push_back(input.front());
 			index_input++;
+			// output exp
+			println("Shift " + new_state_top);
 		}
-		if (table[s][input[index_input]][0] == 'R')
+		if (table[state.top()][input[index_input]][0] == 'R')
 		{
+			auto g = generative[table[state.top()][input[index_input]][1]];
+			for (int i = 0; i < g[1].length(); ++i) // pop |¦Â| from state
+			{
+				state.pop();
+			}
+			symble.push_back(g[0].data()[0]);
+			auto new_state_top = table[state.top()][g[0].data()[0]]; //goto[S',a]
+			int int_state_top = stoi(new_state_top, nullptr, 0); // convert 10 to int
+			state.push(int_state_top);
+			println("reduce by " + g[0] + "->" + g[1]);
 		}
+		if (table[state.top()][input[index_input]] == "ACC")
+		{
+			return;
+		}
+		println("error");
 	}
 }
