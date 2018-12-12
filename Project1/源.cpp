@@ -14,9 +14,9 @@ enum Vt { add = -'+', sub = -'-', multi = -'*', divide = -'/', lp = -'(', rp = -
 enum Vn { E = 'E', T = 'T', F = 'F' } vn;
 
 vector<vector<string>> generative;
-auto FOLLOW_E = { add, sub, $ };
-auto FOLLOW_T = { add, sub, multi, divide, rp, $ };
-auto FOLLOW_F = { add, sub, multi, divide, rp, $ };
+auto FOLLOW_E = {add, sub, rp, $};
+auto FOLLOW_T = {add, sub, multi, divide, rp, $};
+auto FOLLOW_F = {add, sub, multi, divide, rp, $};
 typedef pair<int, string> cell;
 typedef map<int, string> row;
 typedef vector<string> expression;
@@ -24,9 +24,10 @@ typedef vector<int> arithmetic_exp;
 
 stack<int> state;
 stack<int> symble;
-arithmetic_exp input = { 3, multi, lp, 5, add, 4, divide, 2, rp, $ }; //input 3*(5+4/2)
-arithmetic_exp input_test = { 3, add, 2, $ }; // test input 3+2
+arithmetic_exp input = {3, multi, lp, 5, add, 4, divide, 2, rp, $}; //input 3*(5+4/2)
+arithmetic_exp input_test = {3, add, divide, $}; // test input 3+2
 arithmetic_exp arithmetic_expression;
+
 template <typename T> // must before the func
 void println(T a)
 {
@@ -83,6 +84,7 @@ void add_reduce_via_follow(initializer_list<Vt> v, string action, row& col)
 		col[element] = action;
 	}
 }
+void error();
 
 void init()
 {
@@ -91,7 +93,7 @@ void init()
 	// init the symble
 	symble.push(0);
 	// init the generative
-	expression e{ "S", "E" };
+	expression e{"S", "E"};
 	generative.push_back(e); //1
 	e[0] = "E", e[1] = "E+T";
 	generative.push_back(e); //2
@@ -111,47 +113,48 @@ void init()
 	generative.push_back(e); //9
 
 	// init the table
-	row col{ cell(lp, "S4"), cell(num, "S5"), cell(E, "1"), cell(T, "2"), cell(F, "3") }; // row 0
+	row col{cell(lp, "S4"), cell(num, "S5"), cell(E, "1"), cell(T, "2"), cell(F, "3")}; // row 0
 	table.push_back(col);
+	col.erase(col.begin(), col.end());
 	col[add] = "S6", col[sub] = "S7", col[$] = "ACC";
-	table.push_back(col); // row1
+	table.push_back(col), col.erase(col.begin(), col.end()); // row1
 	col[multi] = "S8", col[divide] = "S9";
 	// for (auto element : FOLLOW_E)
 	// {
 	// 	col[element] = "R4";
 	// }
 	add_reduce_via_follow(FOLLOW_E, "R4", col);
-	table.push_back(col); // row2
+	table.push_back(col), col.erase(col.begin(), col.end()); // row2
 	// for (auto element : FOLLOW_T)
 	// {
 	// 	col[element] = "R7";
 	// }
 	add_reduce_via_follow(FOLLOW_T, "R7", col);
-	table.push_back(col); //row 3
+	table.push_back(col), col.erase(col.begin(), col.end()); //row 3
 	col[lp] = "S4", col[E] = "10", col[T] = "2", col[F] = "3";
-	table.push_back(col); // row4
+	table.push_back(col), col.erase(col.begin(), col.end()); // row4
 	add_reduce_via_follow(FOLLOW_F, "R9", col);
-	table.push_back(col); // row5
+	table.push_back(col), col.erase(col.begin(), col.end()); // row5
 	col[lp] = "S4", col[num] = "S5", col[T] = "11", col[F] = "3";
-	table.push_back(col); // r6
+	table.push_back(col), col.erase(col.begin(), col.end()); // r6
 	col[lp] = "S4", col[E] = "4", col[T] = "12", col[F] = "3"; //r7
-	table.push_back(col);
+	table.push_back(col), col.erase(col.begin(), col.end());
 	col[lp] = "S4", col[num] = "S5", col[F] = "13"; // r8
-	table.push_back(col);
-	col[F] = "14";
-	table.push_back(col); // r9
+	table.push_back(col), col.erase(col.begin(), col.end());
+	col[lp] = "S4", col[num] = "S5", col[F] = "14";
+	table.push_back(col), col.erase(col.begin(), col.end()); // r9
 	col[add] = "S6", col[sub] = "S7", col[rp] = "S15";
-	table.push_back(col); //r10
+	table.push_back(col), col.erase(col.begin(), col.end()); //r10
 	col[multi] = "S8", col[divide] = "S9";
 	add_reduce_via_follow(FOLLOW_E, "R2", col);
 	table.push_back(col); //r11
-	table.push_back(col); //r12=r11
+	table.push_back(col), col.erase(col.begin(), col.end()); //r12=r11
 	add_reduce_via_follow(FOLLOW_T, "R5", col);
-	table.push_back(col); // r13
+	table.push_back(col), col.erase(col.begin(), col.end()); // r13
 	add_reduce_via_follow(FOLLOW_T, "R6", col);
-	table.push_back(col); //r14
+	table.push_back(col), col.erase(col.begin(), col.end()); //r14
 	add_reduce_via_follow(FOLLOW_F, "R8", col);
-	table.push_back(col); //r15
+	table.push_back(col), col.erase(col.begin(), col.end()); //r15
 }
 
 int is_number(string s) // check string is a num
@@ -219,7 +222,11 @@ void analysis(arithmetic_exp input)
 			println("ACC");
 			break;
 		}
-		println("error");
+		else
+		{
+			error();
+			break;
+		}
 	}
 }
 
@@ -238,4 +245,9 @@ void print_arithmetic_exp(arithmetic_exp input)
 		}
 	}
 	cout << endl;
+}
+
+void error()
+{
+	println("error");
 }
