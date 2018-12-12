@@ -21,7 +21,7 @@ typedef map<int, string> row;
 typedef vector<string> expression;
 
 stack<int> state;
-vector<int> symble{-1};
+stack<int> symble;
 vector<int> input = {3, multi, lp, 5, add, 4, divide, 2, rp, $}; //input 3*(5+4/2)
 
 template <typename T> // must before the func
@@ -39,11 +39,11 @@ vector<row> table;
 
 int main(int argc, char* argv[])
 {
-	// init();
-	// analysis();
-	// println(generative[0][0]);
+	init();
+	analysis();
 	system("pause");
 	return 0;
+	// println(generative[0][0]);
 	// string s = "R15";
 	// s.erase(s.begin());
 	// auto i = stoi(s, nullptr, 0);
@@ -80,6 +80,8 @@ void init()
 {
 	// init the state
 	state.push(0);
+	// init the symble
+	symble.push(0);
 	// init the generative
 	expression e{"S", "E"};
 	generative.push_back(e); //1
@@ -152,26 +154,28 @@ void analysis()
 		// auto s = state.top();
 		if (table[state.top()][input[index_input]][0] == 'S')
 		{
-			auto shift_action = table[state.top()][input[index_input]];
-			shift_action.erase(shift_action.begin());
+			auto shift_action = table[state.top()][input[index_input]]; // like: S15
+			shift_action.erase(shift_action.begin()); // erase 'S'
 			auto new_state_top = stoi(shift_action, nullptr, 0);
 			// auto new_state_top = table[state.top()][input[index_input]][1] - int('0');
 			state.push(new_state_top);
-			symble.push_back(input.front());
+			symble.push(input[index_input]);
 			index_input++;
 			// output exp
 			println("Shift " + new_state_top);
 		}
 		if (table[state.top()][input[index_input]][0] == 'R')
 		{
-			auto g = generative[table[state.top()][input[index_input]][1]];
+			auto g = generative[table[state.top()][input[index_input]][1]-'0']; // only 9 generative
 			for (int i = 0; i < g[1].length(); ++i) // pop |¦Â| from state
 			{
 				state.pop();
+				symble.pop();
 			}
-			symble.push_back(g[0].data()[0]);
-			auto new_state_top = table[state.top()][g[0].data()[0]]; //goto[S',a]
-			int int_state_top = stoi(new_state_top, nullptr, 0); // convert 10 to int
+			symble.push(g[0].data()[0]);
+			auto new_state_top = table[state.top()][static_cast<int>(g[0].data()[0])]; //goto[S',A] convert 'E' to int
+			// new_state_top is a string, like "13"
+			int int_state_top = stoi(new_state_top, nullptr, 0); // convert 13 to int
 			state.push(int_state_top);
 			println("reduce by " + g[0] + "->" + g[1]);
 		}
