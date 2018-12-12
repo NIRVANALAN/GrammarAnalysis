@@ -2,13 +2,14 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <stack>
 using namespace std;
 #define TABLE_COLS 8
 #define TABLE_RWO 15
 #define GENERATIVE_NUM 9
 
-enum Vt { add='+', sub='-', multi='*', divide='/', lp='(', rp='RP', num, $='$' } vt;
+enum Vt { add=-'+', sub=-'-', multi=-'*', divide=-'/', lp=-'(', rp=-')', num=0, $=-'$' } vt;
 
 enum Vn { E='E', T='T', F='F' } vn;
 
@@ -19,10 +20,12 @@ auto FOLLOW_F = {add, sub, multi, divide, rp, $};
 typedef pair<int, string> cell;
 typedef map<int, string> row;
 typedef vector<string> expression;
+typedef vector<int> arithmetic_exp;
 
 stack<int> state;
 stack<int> symble;
-vector<int> input = {3, multi, lp, 5, add, 4, divide, 2, rp, $}; //input 3*(5+4/2)
+arithmetic_exp input = {3, multi, lp, 5, add, 4, divide, 2, rp, $}; //input 3*(5+4/2)
+arithmetic_exp input_test = {3, add, 2, $}; // test input 3+2
 
 template <typename T> // must before the func
 void println(T a)
@@ -32,7 +35,7 @@ void println(T a)
 }
 
 void init();
-void analysis();
+void analysis(arithmetic_exp input);
 // SLR(1) TABLE
 vector<row> table;
 // row table[TABLE_COLS];
@@ -40,9 +43,11 @@ vector<row> table;
 int main(int argc, char* argv[])
 {
 	init();
-	analysis();
+	analysis(input_test);
 	system("pause");
 	return 0;
+	// row coc{cell(-1, "aa")};
+	// println(coc[-1]);
 	// println(generative[0][0]);
 	// string s = "R15";
 	// s.erase(s.begin());
@@ -124,9 +129,9 @@ void init()
 	table.push_back(col); // row4
 	add_reduce_via_follow(FOLLOW_F, "R9", col);
 	table.push_back(col); // row5
-	col[lp] = "S4", col[num] = "S5", col[T] = "11", col[F] = "13";
+	col[lp] = "S4", col[num] = "S5", col[T] = "11", col[F] = "3";
 	table.push_back(col); // r6
-	col[lp] = "S4", col[E] = "4", col[T] = "12", col[F] = "13"; //r7
+	col[lp] = "S4", col[E] = "4", col[T] = "12", col[F] = "3"; //r7
 	table.push_back(col);
 	col[lp] = "S4", col[num] = "S5", col[F] = "13"; // r8
 	table.push_back(col);
@@ -135,7 +140,7 @@ void init()
 	col[add] = "S6", col[sub] = "S7", col[rp] = "S15";
 	table.push_back(col); //r10
 	col[multi] = "S8", col[divide] = "S9";
-	add_reduce_via_follow(FOLLOW_E, "S2", col);
+	add_reduce_via_follow(FOLLOW_E, "R2", col);
 	table.push_back(col); //r11
 	table.push_back(col); //r12=r11
 	add_reduce_via_follow(FOLLOW_T, "R5", col);
@@ -146,12 +151,27 @@ void init()
 	table.push_back(col); //r15
 }
 
-void analysis()
+int is_number(string s) // check string is a num
+{
+	stringstream sin(s);
+	int t;
+	if (sin >> t)
+	{
+		return t;
+	}
+	return -1;
+}
+
+void analysis(arithmetic_exp input)
 {
 	auto index_input = 0;
 	while (true)
 	{
 		// auto s = state.top();
+		if (input[index_input] > 0)
+		{
+			input[index_input] = 0;
+		}
 		if (table[state.top()][input[index_input]][0] == 'S')
 		{
 			auto shift_action = table[state.top()][input[index_input]]; // like: S15
@@ -162,12 +182,22 @@ void analysis()
 			symble.push(input[index_input]);
 			index_input++;
 			// output exp
-			println("Shift " + new_state_top);
+			cout << "Shift " << new_state_top << endl;
+			continue;
 		}
 		if (table[state.top()][input[index_input]][0] == 'R')
 		{
-			auto g = generative[table[state.top()][input[index_input]][1]-'0']; // only 9 generative
-			for (int i = 0; i < g[1].length(); ++i) // pop |¦Â| from state
+			auto reduce_state = table[state.top()][input[index_input]][1];
+			auto g = generative[reduce_state - '0' - 1]; // only 9 generative
+			if (g[1][0] != 'n') // !=NUM
+			{
+				for (int i = 0; i < g[1].length(); ++i) // pop |¦Â| from state
+				{
+					state.pop();
+					symble.pop();
+				}
+			}
+			else
 			{
 				state.pop();
 				symble.pop();
@@ -177,11 +207,13 @@ void analysis()
 			// new_state_top is a string, like "13"
 			int int_state_top = stoi(new_state_top, nullptr, 0); // convert 13 to int
 			state.push(int_state_top);
-			println("reduce by " + g[0] + "->" + g[1]);
+			cout << "reduce by " << g[0] << "->" + g[1] << endl;
+			continue;
 		}
 		if (table[state.top()][input[index_input]] == "ACC")
 		{
-			return;
+			println("ACC");
+			break;
 		}
 		println("error");
 	}
