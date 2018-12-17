@@ -25,7 +25,7 @@ typedef vector<int> arithmetic_exp;
 stack<int> state;
 stack<int> symble;
 arithmetic_exp input = {3, multi, lp, 5, add, 4, divide, 2, rp, $}; //input 3*(5+4/2)
-arithmetic_exp input_test = {3, add, divide, $}; // test input 3+2
+arithmetic_exp input_test = {3, add, divide, $}; // test input 3+2 3+/ error
 arithmetic_exp arithmetic_expression;
 
 template <typename T> // must before the func
@@ -84,7 +84,8 @@ void add_reduce_via_follow(initializer_list<Vt> v, string action, row& col)
 		col[element] = action;
 	}
 }
-void error();
+
+void error(arithmetic_exp input, int index);
 
 void init()
 {
@@ -224,7 +225,7 @@ void analysis(arithmetic_exp input)
 		}
 		else
 		{
-			error();
+			error(input, index_input);
 			break;
 		}
 	}
@@ -247,7 +248,14 @@ void print_arithmetic_exp(arithmetic_exp input)
 	cout << endl;
 }
 
-void error()
+void error(arithmetic_exp input, int index)
 {
 	println("error");
+	cout << "current state top: " << state.top() << endl;
+	if (input[index] < 0)
+	{
+		cout << "current ip: " << char(-input[index]) << endl;
+	}
+	else
+	cout << "current ip: " << (input[index]) << endl;
 }
